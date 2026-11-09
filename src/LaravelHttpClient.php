@@ -3,7 +3,7 @@
 namespace Bahari\Laravel;
 
 use Bahari\Sso\Exception\BahariException;
-use Bahari\Sso\Http\HttpClient;
+use Bahari\Sso\Http\DirectPeerHttpClient;
 use Bahari\Sso\Http\Response;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
@@ -11,13 +11,30 @@ use Illuminate\Support\Facades\Http;
 /**
  * Sends SDK requests through Laravel's HTTP client, so Http::fake() works in your tests.
  */
-class LaravelHttpClient implements HttpClient
+class LaravelHttpClient implements DirectPeerHttpClient
 {
+    public function supportsDirectPeer(): bool
+    {
+        return ! app()->environment('testing');
+    }
+
     public function send(string $method, string $url, array $headers = [], ?string $body = null): Response
+    {
+        return $this->sendWithResolve($method, $url, $headers, $body, []);
+    }
+
+    public function sendWithResolve(string $method, string $url, array $headers = [], ?string $body = null, array $resolve = []): Response
     {
         $contentType = $headers['Content-Type'] ?? 'application/json';
         unset($headers['Content-Type']);
         $request = Http::withHeaders($headers)->withoutRedirecting()->connectTimeout(3)->timeout(10);
+        if (! app()->environment('testing')) {
+            $options = ['force_ip_resolve' => 'v4'];
+            if ($resolve !== []) {
+                $options['curl'] = [CURLOPT_RESOLVE => $resolve];
+            }
+            $request = $request->withOptions($options);
+        }
         if ($body !== null) {
             $request = $request->withBody($body, $contentType);
         }

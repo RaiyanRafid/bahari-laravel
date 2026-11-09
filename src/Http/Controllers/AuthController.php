@@ -94,6 +94,7 @@ class AuthController extends Controller
         $user = Auth::guard($guard)->user();
         $session = $user && is_string($id) ? $this->bahari->sessions()->find($kind, $id, $user) : null;
         if ($session) {
+            \Illuminate\Support\Facades\Cache::store(config('bahari.cache_store'))->forget('bahari:checked:'.$session->getBahariSessionId());
             $this->bahari->sessions()->revoke($session);
             try {
                 $this->bahari->client()->revoke($kind, $session->getBahariTokens());

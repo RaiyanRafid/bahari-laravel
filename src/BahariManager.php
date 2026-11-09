@@ -75,15 +75,29 @@ class BahariManager
      */
     public function check(StoredSession $session): StoredSession
     {
-        return Cache::lock('bahari-session:'.$session->getBahariSessionId(), 60)->block(3, function () use ($session): StoredSession {
+        $recheck = (int) config('bahari.session_recheck_seconds', 0);
+        $expiresAt = $session->getBahariAccessExpiresAt();
+        $store = Cache::store(config('bahari.cache_store'));
+        if ($recheck > 0 && (! $expiresAt || $expiresAt->getTimestamp() - time() > 45) && $store->has('bahari:checked:'.$session->getBahariSessionId())) {
+            return $session;
+        }
+
+        return Cache::lock('bahari-session:'.$session->getBahariSessionId(), 60)->block(3, function () use ($session, $recheck, $store): StoredSession {
             $fresh = $this->sessions->find($session->getBahariKind(), $session->getBahariSessionId(), $session->getBahariUser());
             if (! $fresh) {
                 throw new AccessDeniedException('The session has ended.');
             }
             $expiresAt = $fresh->getBahariAccessExpiresAt();
+            if ($recheck > 0 && (! $expiresAt || $expiresAt->getTimestamp() - time() > 45) && $store->has('bahari:checked:'.$fresh->getBahariSessionId())) {
+                return $fresh;
+            }
             $identity = $this->client->refresh($fresh->getBahariKind(), $fresh->getBahariTokens(), $fresh->getBahariSubject(), $expiresAt ? $expiresAt->getTimestamp() - time() : null);
+            $refreshed = $this->sessions->refreshed($fresh, $identity);
+            if ($recheck > 0) {
+                $store->put('bahari:checked:'.$fresh->getBahariSessionId(), true, $recheck);
+            }
 
-            return $this->sessions->refreshed($fresh, $identity);
+            return $refreshed;
         });
     }
 

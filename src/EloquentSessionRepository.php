@@ -47,12 +47,18 @@ class EloquentSessionRepository implements SessionRepository
 
     public function revoke(StoredSession $session): void
     {
+        \Illuminate\Support\Facades\Cache::store(config('bahari.cache_store'))->forget('bahari:checked:'.$session->getBahariSessionId());
         BahariSession::query()->whereKey($session->getBahariSessionId())->update(['revoked_at' => now()]);
     }
 
     public function revokeSubject(string $kind, string $subject): void
     {
-        BahariSession::query()->where('kind', $kind)->where('subject', $subject)->whereNull('revoked_at')->update(['revoked_at' => now()]);
+        $query = BahariSession::query()->where('kind', $kind)->where('subject', $subject)->whereNull('revoked_at');
+        $ids = (clone $query)->pluck('id');
+        foreach ($ids as $id) {
+            \Illuminate\Support\Facades\Cache::store(config('bahari.cache_store'))->forget('bahari:checked:'.$id);
+        }
+        $query->update(['revoked_at' => now()]);
     }
 
     private function resolver(): UserResolver

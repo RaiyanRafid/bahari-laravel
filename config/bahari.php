@@ -33,6 +33,8 @@ return [
     // Session key prefix: the signed-in Bahari session id is kept at "{session_key}.{kind}".
     'session_key' => 'bahari.identity',
     'session_hours' => 8,
+    // Optional short TTL (seconds) to skip redundant Accounts round-trips on rapid sub-requests (0 = recheck every request).
+    'session_recheck_seconds' => (int) env('BAHARI_SESSION_RECHECK_SECONDS', 0),
     'post_logout_redirect' => null,  // defaults to url('/')
 
     // One "Sign in" button (route bahari.signin): people whose Bahari account is linked to an administrator of this
