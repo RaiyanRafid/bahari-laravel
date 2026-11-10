@@ -33,9 +33,9 @@ class BahariManager
         return $this->client->url($name, $query);
     }
 
-    public function walletUrl(?string $returnTo = null): string
+    public function walletUrl(?string $returnTo = null, ?string $amount = null): string
     {
-        return $this->client->walletUrl($returnTo ?? config('bahari.kinds.client.path'));
+        return $this->client->walletUrl($returnTo ?? config('bahari.kinds.client.path'), $amount);
     }
 
     /** The checked Bahari session of the current request (set by the bahari.auth middleware). */
@@ -60,10 +60,10 @@ class BahariManager
         return $this->client->api($method, $path, $data, $scope);
     }
 
-    /** Billing calls (createInvoice, createSubscription, cancelSubscription, ...) go to the core client. */
+    /** Billing and wallet top-up calls (createInvoice, startTopUp, createSubscription, ...) go to the core client. */
     public function __call(string $method, array $arguments): mixed
     {
-        abort_unless(in_array($method, ['createInvoice', 'invoice', 'voidInvoice', 'createSubscription', 'subscription', 'updateSubscription', 'cancelSubscription', 'resumeSubscription', 'customerSubscriptions'], true), 500, 'Unknown Bahari method '.$method.'.');
+        abort_unless(in_array($method, ['checkoutOptions', 'startTopUp', 'topUp', 'createInvoice', 'invoice', 'voidInvoice', 'createSubscription', 'subscription', 'updateSubscription', 'cancelSubscription', 'resumeSubscription', 'customerSubscriptions'], true), 500, 'Unknown Bahari method '.$method.'.');
 
         return $this->client->{$method}(...$arguments);
     }
