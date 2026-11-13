@@ -91,6 +91,34 @@ Bahari::navigation(Bahari::session());
 Bahari::api('GET', 'platform-wallet-balances');
 ```
 
+## Roles, maintenance and branding (0.5.0)
+
+Bahari decides who is an administrator of your app (Connected apps › Access & RBAC) and whether it is in maintenance.
+
+```php
+Bahari::role();      // 'SUPER_ADMIN', 'ADMIN' or 'USER' for the current session
+Bahari::isAdmin();   // true only for an admin session of this app
+Bahari::maintenance(); // ['enabled' => bool, 'message' => ?string]
+Bahari::branding();  // name, logo_light_url, logo_dark_url, favicon_url, brand_color, access_mode, support
+```
+
+Add the `bahari.branding` middleware to your web group to share `$bahariBranding` and `$bahariMaintenance` with every
+view, then show a banner:
+
+```blade
+@if ($bahariMaintenance['enabled'])
+    <div class="banner">{{ $bahariMaintenance['message'] ?? 'We are doing maintenance. Some features may be unavailable.' }}</div>
+@endif
+```
+
+Branding is cached for `BAHARI_BRANDING_TTL` seconds (default 60); the last good copy is used if Bahari is unreachable.
+
+**Losing access ends sessions at once.** When someone loses access (removed from the app's administrators, admin
+revoked or suspended, account suspended, app switched to staff only), Bahari calls your back-channel logout endpoint.
+The package ends their customer sessions and, from 0.5.0, their admin sessions too. A custom session repository
+should implement `Bahari\Laravel\Contracts\RevokesLinkedSessions` (end admin sessions whose profile `user_id` is the
+given account); without it, admin sessions still end at their next check with Bahari.
+
 ## Updates
 
 The package sends `X-Bahari-SDK: bahari/laravel/<version>`. Bahari shows the version per app and flags outdated or

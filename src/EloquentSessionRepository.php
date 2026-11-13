@@ -2,6 +2,7 @@
 
 namespace Bahari\Laravel;
 
+use Bahari\Laravel\Contracts\RevokesLinkedSessions;
 use Bahari\Laravel\Contracts\SessionRepository;
 use Bahari\Laravel\Contracts\StoredSession;
 use Bahari\Laravel\Contracts\UserResolver;
@@ -13,7 +14,7 @@ use RuntimeException;
 /**
  * Default storage: the bahari_sessions table plus the app's UserResolver (config bahari.user_resolver).
  */
-class EloquentSessionRepository implements SessionRepository
+class EloquentSessionRepository implements RevokesLinkedSessions, SessionRepository
 {
     public function create(Identity $identity): StoredSession
     {
@@ -59,6 +60,17 @@ class EloquentSessionRepository implements SessionRepository
             \Illuminate\Support\Facades\Cache::store(config('bahari.cache_store'))->forget('bahari:checked:'.$id);
         }
         $query->update(['revoked_at' => now()]);
+    }
+
+    public function revokeLinkedUser(string $userId): void
+    {
+        // Profiles are encrypted, so the (few) active admin sessions are checked one by one.
+        BahariSession::query()->where('kind', 'admin')->whereNull('revoked_at')->where('expires_at', '>', now())->get()
+            ->filter(fn (BahariSession $session): bool => ($session->getBahariProfile()['user_id'] ?? null) === $userId)
+            ->each(function (BahariSession $session): void {
+                \Illuminate\Support\Facades\Cache::store(config('bahari.cache_store'))->forget('bahari:checked:'.$session->id);
+                $session->forceFill(['revoked_at' => now()])->save();
+            });
     }
 
     private function resolver(): UserResolver

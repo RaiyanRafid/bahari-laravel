@@ -6,5 +6,5 @@ final class Sdk
 {
     public const PACKAGE = 'bahari/laravel';
 
-    public const VERSION = '0.4.2';
+    public const VERSION = '0.5.0';
 }

@@ -49,6 +49,26 @@ class BahariManager
         return $this->client->navigation($session->getBahariKind(), $session->getBahariTokens(), config('bahari.kinds.client.path'));
     }
 
+    /** SUPER_ADMIN, ADMIN or USER for a stored session, as Bahari decides it from the platform's Access & RBAC. */
+    public function role(?StoredSession $session = null): string
+    {
+        $session ??= $this->session();
+
+        return $session ? $this->client->role($this->identity($session)) : 'USER';
+    }
+
+    public function isAdmin(?StoredSession $session = null): bool
+    {
+        $session ??= $this->session();
+
+        return $session !== null && $this->client->isAdmin($this->identity($session));
+    }
+
+    private function identity(StoredSession $session): \Bahari\Sso\Identity
+    {
+        return new \Bahari\Sso\Identity($session->getBahariKind(), $session->getBahariSubject(), [], $session->getBahariProfile());
+    }
+
     public function updatePinned(StoredSession $session, array $keys): Response
     {
         return $this->client->updatePinned($session->getBahariTokens(), $keys);

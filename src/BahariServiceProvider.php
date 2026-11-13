@@ -34,6 +34,7 @@ class BahariServiceProvider extends ServiceProvider
         $this->publishes([__DIR__.'/../config/bahari.php' => config_path('bahari.php')], 'bahari-config');
         $this->publishes([__DIR__.'/../database/migrations' => database_path('migrations')], 'bahari-migrations');
         $this->app['router']->aliasMiddleware('bahari.auth', Authenticate::class);
+        $this->app['router']->aliasMiddleware('bahari.branding', Http\Middleware\ShareBranding::class);
         if ($this->app->runningInConsole()) {
             $this->commands([Console\ConnectCommand::class]);
         }

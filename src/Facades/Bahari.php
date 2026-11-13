@@ -24,6 +24,10 @@ use Illuminate\Support\Facades\Facade;
  * @method static array cancelSubscription(string $reference, string $when = 'period_end')
  * @method static array resumeSubscription(string $reference)
  * @method static array customerSubscriptions(string $userId)
+ * @method static string role(?\Bahari\Laravel\Contracts\StoredSession $session = null)
+ * @method static bool isAdmin(?\Bahari\Laravel\Contracts\StoredSession $session = null)
+ * @method static array branding(?string $platform = null, int $ttl = 60)
+ * @method static array maintenance(?string $platform = null)
  *
  * @see \Bahari\Laravel\BahariManager
  */

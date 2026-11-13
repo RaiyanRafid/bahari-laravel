@@ -35,6 +35,9 @@ return [
     'session_hours' => 8,
     // Optional short TTL (seconds) to skip redundant Accounts round-trips on rapid sub-requests (0 = recheck every request).
     'session_recheck_seconds' => (int) env('BAHARI_SESSION_RECHECK_SECONDS', 0),
+
+    // How long (seconds) to cache the app's branding and maintenance state from Bahari (middleware bahari.branding).
+    'branding_ttl' => (int) env('BAHARI_BRANDING_TTL', 60),
     'post_logout_redirect' => null,  // defaults to url('/')
 
     // One "Sign in" button (route bahari.signin): people whose Bahari account is linked to an administrator of this

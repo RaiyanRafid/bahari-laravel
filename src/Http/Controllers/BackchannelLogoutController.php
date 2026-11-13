@@ -2,6 +2,7 @@
 
 namespace Bahari\Laravel\Http\Controllers;
 
+use Bahari\Laravel\Contracts\RevokesLinkedSessions;
 use Bahari\Laravel\BahariManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,6 +30,10 @@ class BackchannelLogoutController extends Controller
                 return;
             }
             $bahari->sessions()->revokeSubject('client', $claims['sub']);
+            // Bahari also sends this when someone loses admin access to the app: end their admin sessions too.
+            if ($bahari->sessions() instanceof RevokesLinkedSessions) {
+                $bahari->sessions()->revokeLinkedUser($claims['sub']);
+            }
             Cache::put($key, true, 300);
         });
 
